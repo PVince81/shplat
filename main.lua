@@ -1,6 +1,7 @@
 require "model"
 
 FIELD_SIZE = 20
+MOMENTUM = 1
 
 function love.conf(t)
     t.screen.width = 800
@@ -17,8 +18,13 @@ end
 
 function love.update(dt)
    if love.keyboard.isDown("right") then
-      player.x = player.x + 1 * dt -- this would increment num by 100 per second
+      MOMENTUM = MOMENTUM + 0.5 * dt
+	  player.x = player.x + MOMENTUM * dt
    end
+end
+
+function love.keyreleased( key, unicode )
+   MOMENTUM = 1
 end
 
 function love.draw()
@@ -42,4 +48,7 @@ function love.draw()
     love.graphics.setColor(128, 0, 0, 255)
     -- render player
     love.graphics.circle("fill", (player.x  - 0.5) * FIELD_SIZE, (player.y - 0.5) * FIELD_SIZE, FIELD_SIZE / 2.0)
+	
+	-- debug
+	love.graphics.print(MOMENTUM, 20, 20)
 end
