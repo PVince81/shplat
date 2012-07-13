@@ -15,6 +15,12 @@ function love.load()
     player.y = level.playerStartY
 end
 
+function love.update(dt)
+   if love.keyboard.isDown("right") then
+      player.x = player.x + 1 * dt -- this would increment num by 100 per second
+   end
+end
+
 function love.draw()
     love.graphics.setColor(255, 255, 255, 255)
 
