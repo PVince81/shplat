@@ -17,6 +17,9 @@ function loadSprites()
     spritesImage = love.graphics.newImage("sprites.png")
     sprites.block = love.graphics.newQuad(0, 0, FIELD_SIZE, FIELD_SIZE, spritesImage:getWidth(), spritesImage:getHeight())
     sprites.ladder = love.graphics.newQuad(FIELD_SIZE, 0, FIELD_SIZE, FIELD_SIZE, spritesImage:getWidth(), spritesImage:getHeight())
+
+    sprites.playerRight = love.graphics.newQuad(0, FIELD_SIZE, FIELD_SIZE, FIELD_SIZE, spritesImage:getWidth(), spritesImage:getHeight())
+    sprites.playerLeft = love.graphics.newQuad(FIELD_SIZE, FIELD_SIZE, FIELD_SIZE, FIELD_SIZE, spritesImage:getWidth(), spritesImage:getHeight())
 end
 
 function love.load()
@@ -61,10 +64,13 @@ function love.draw()
     end
 
     -- render player
-    love.graphics.setColor(128, 0, 0, 255)
-    love.graphics.circle("fill", (player.x  - 0.5) * FIELD_SIZE, (player.y - 0.5) * FIELD_SIZE,
-            FIELD_SIZE / 2.0)
-    love.graphics.setColor(96, 0, 0, 255)
-    love.graphics.circle("line", (player.x  - 0.5) * FIELD_SIZE, (player.y - 0.5) * FIELD_SIZE,
-            FIELD_SIZE / 2.0)
+    if MOMENTUM < 0 then
+        playerSprite = sprites.playerLeft
+    else
+        playerSprite = sprites.playerRight
+    end
+
+    offsetX = (player.x  - 0.5) * FIELD_SIZE
+    offsetY = player.y  * FIELD_SIZE - FIELD_SIZE
+    love.graphics.drawq(spritesImage, playerSprite, offsetX, offsetY)
 end
