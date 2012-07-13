@@ -23,9 +23,9 @@ function loadLevel(num)
         fields[height-4][x] = FIELD_BLOCK
     end
 
-    fields[height-1][width - 1] = FIELD_LADDER
     fields[height-2][width - 1] = FIELD_LADDER
     fields[height-3][width - 1] = FIELD_LADDER
+    fields[height-4][width - 1] = FIELD_LADDER
     fields[height-5][width - 1] = FIELD_LADDER
 
     
