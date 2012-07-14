@@ -17,7 +17,9 @@ player = {
             -- speed
             speed=0.4,
             -- max speed
-            maxSpeed=0.1
+            maxSpeed=0.1,
+			-- state
+			state="stand"
         }
 cam = {x=0, y=0}
 sprites = nil
@@ -72,6 +74,22 @@ function love.update(dt)
         player.dx = -1
     end
 
+	if love.keyboard.isDown("up") then
+
+    currentTile = TiledMap_GetMapTile(math.floor(player.x + 0.5), math.floor(player.y + 0.5), z)
+    targetTileProps = TiledMap_GetTileProps(targetTile) or {};
+    if targetTileProps.type == "ladder" then
+        player.vy = -0.07
+		player.state = "climbe"
+    else
+		player.vy = 0
+		player.state = "stand"
+	end	
+	
+	
+	
+	end
+	
     if moveX ~= 0 then
         player.vx = player.vx + moveX * player.speed * dt
     else
@@ -124,9 +142,14 @@ function love.keypressed(key, unicode)
 	if key == "s" then -- show/hide with "s"
 		debug.toggle()
 	end
+
 end
 
 function love.keyreleased( key, unicode )
+	if key == "up" then
+		player.vy = 0
+		player.state="stand"
+	end
 end
 
 function love.draw()
