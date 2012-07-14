@@ -200,6 +200,7 @@ local function getTilesets(node)
     for k, sub in ipairs(node) do
         if (sub.label == "tileset") then
             tiles[tonumber(sub.xarg.firstgid)] = sub[1].xarg.source
+            -- TODO: load properties
         end
     end
     return tiles

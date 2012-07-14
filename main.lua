@@ -3,14 +3,27 @@ require "model"
 FIELD_SIZE = 25
 
 level = nil
-player = {x=0, y=0}
+player = {
+            -- position
+            x=0,
+            y=0,
+            -- movement vector
+            vx=0,
+            vy=0,
+            -- direction
+            dx=1,
+            -- speed
+            speed=0.2,
+            -- max speed
+            maxSpeed=0.1
+        }
 cam = {x=0, y=0}
 sprites = nil
-MOMENTUM = 0
 
 function love.conf(t)
     t.screen.width = 800
     t.screen.height = 600
+    t.screen.vsync = true
 end
 
 function loadSprites()
@@ -44,15 +57,49 @@ function love.load()
 end
 
 function love.update(dt)
-   if love.keyboard.isDown("right") then
-      MOMENTUM = MOMENTUM + 0.5 * dt
-      player.x = player.x + MOMENTUM * dt
-      cam.x = cam.x + MOMENTUM * dt * FIELD_SIZE
-   end
+    moveX = 0
+    if love.keyboard.isDown("right") then
+        moveX = 1
+        player.dx = 1
+    elseif love.keyboard.isDown("left") then
+        moveX = -1
+        player.dx = -1
+    end
+
+    if moveX ~= 0 then
+        player.vx = player.vx + moveX * player.speed * dt
+        if math.abs(player.vx) > player.maxSpeed then
+            player.vx = player.maxSpeed * player.vx / math.abs(player.vx)
+        end
+    else
+        -- deccelerate
+        player.vx = player.vx * 0.9
+    end
+    if math.abs(player.vx) < 0.001 then
+        player.vx = 0
+    end
+
+    target = {
+        x = player.x + player.vx,
+        y = player.y + player.vy
+    }
+
+    -- TODO: add collision detection    
+    targetTile = TiledMap_GetMapTile(math.floor(target.x), math.floor(target.y), 1)
+    if targetTile == 1 then
+        target.x = player.x
+        target.y = player.y
+    end
+    
+    
+    player.x = target.x
+    player.y = target.y
+
+    cam.x = player.x * FIELD_SIZE
+    cam.y = player.y * FIELD_SIZE    
 end
 
 function love.keyreleased( key, unicode )
-   MOMENTUM = 1
 end
 
 function love.draw()
@@ -81,13 +128,18 @@ function love.draw()
     mapOffsetX = love.graphics.getWidth() / 2 - cam.x
     mapOffsetY = love.graphics.getHeight() / 2 - cam.y
     
-    if MOMENTUM < 0 then
+    if player.dx < 0 then
         playerSprite = sprites.playerLeft
     else
         playerSprite = sprites.playerRight
     end
 
-    offsetX = mapOffsetX + (player.x  - 0.5) * FIELD_SIZE
-    offsetY = mapOffsetY + player.y  * FIELD_SIZE - FIELD_SIZE
+    offsetX = mapOffsetX + (player.x - 0.5) * FIELD_SIZE
+    offsetY = mapOffsetY + player.y  * FIELD_SIZE -- - FIELD_SIZE
     love.graphics.drawq(spritesImage, playerSprite, offsetX, offsetY)
+
+    -- debug
+    tile = TiledMap_GetMapTile(math.floor(player.x), math.floor(player.y), 1)
+    
+    love.graphics.print(tile, 0, love.graphics.getHeight() - 20)
 end
