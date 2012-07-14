@@ -45,6 +45,12 @@ function love.load()
 
     loadLevel(1)
     z = TiledMap_GetLayerZByName("blocks")
+	debug_player_x = debug.add("Player.x")
+	debug_player_y = debug.add("Player.y")
+	debug_player_vx = debug.add("Player.vx")
+	debug_player_vy = debug.add("Player.vy")
+	
+	
 end
 
 function love.update(dt)
@@ -76,13 +82,13 @@ function love.update(dt)
     }
 
     -- TODO: add collision detection
-    targetTile = TiledMap_GetMapTile(math.floor(target.x), math.floor(target.y), 1)
+--[[    targetTile = TiledMap_GetMapTile(math.floor(target.x), math.floor(target.y), 1)
     targetTileProps = TiledMap_GetTileProps(targetTile) or {};    
     if targetTileProps.type == "wall" then
         target.x = player.x
         target.y = player.y
     end
-    
+--]]    
     player.x = target.x
     player.y = target.y
 
@@ -95,6 +101,10 @@ function love.update(dt)
     tileProps = TiledMap_GetTileProps(tile) or {};
     tileType = tileProps.type or tile
     debug.update(debug_currentTile, tileType)
+	debug.update(debug_player_x, player.x)
+	debug.update(debug_player_y, player.y)
+	debug.update(debug_player_vx, player.vx)
+	debug.update(debug_player_vy, player.vy)
 end
 
 function love.keypressed(key, unicode)
