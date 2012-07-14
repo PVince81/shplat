@@ -15,6 +15,7 @@ player = Entity.create("player")
 player.dx=1
 player.speed=0.4
 player.maxSpeed=0.1
+player.maxSpeedY = 0.05
 game = {
     state = State.create("running"),
     keys = 0,
@@ -50,9 +51,9 @@ function love.load()
     debug.toggle()
     fps = debug.add("FPS")
     --random = debug.add("Random")
-    
+
     debug_currentTile = debug.add("Current tile")
-    
+
 
     loadSprites()
 
@@ -118,7 +119,7 @@ function updateEntity(entity, dt)
     if entity.state.name == "dead" or entity.state.name == "exit" then
         return
     end
-    
+
     -- gravity
     if entity.state.name ~= "climb" then
         entity.vy = entity.vy + gravity.y * dt
@@ -132,6 +133,9 @@ function updateEntity(entity, dt)
     end
     if math.abs(entity.vx) > entity.maxSpeed then
         entity.vx = entity.maxSpeed * dirX
+    end
+    if entity.state.name == "climb" and math.abs(entity.vy) > entity.maxSpeedY then
+        entity.vy = entity.maxSpeedY * dirY
     end
 
     target = {
@@ -148,7 +152,7 @@ function updateEntity(entity, dt)
 
         local mapY1 = math.floor(bb.y1) - 1
         local mapY2 = math.floor(bb.y2) + 1
-        
+
         local tiles = getMapRange(mapX, mapY1, mapX, mapY2)
         local hasCollision = false
         for i,tile in ipairs(tiles) do
@@ -191,7 +195,7 @@ function updateEntity(entity, dt)
         local hasCollision = false
         for i,tile in ipairs(tiles) do
             local tileProps = TiledMap_GetTileProps(tile)
-            if tileProps and tileProps.type == "wall" then
+            if tileProps and (tileProps.type == "wall" or ( tileProps.type == "ladder" and entity.state.name ~= "climb")) then
                 local wallBB = {
                     x1 = mapX1 + i - 1,
                     y1 = mapY,
@@ -236,7 +240,6 @@ function updatePlayer(player, dt)
             end
         end
     end
-    
 end
 
 function updateMonster(entity, dt)
@@ -262,12 +265,13 @@ function love.update(dt)
         start()
     end
     game.state:step(dt)
-    
+
     if dt < 1/60 then
       love.timer.sleep((1/60 - dt))
     end
-    
+
     local moveX = 0
+    local moveY = 0
     local dirX = 0
     local dirY = 0
     if love.keyboard.isDown("right") then
@@ -284,6 +288,11 @@ function love.update(dt)
         currentTile = TiledMap_GetMapTile(x, y, z)
         currentTileProps = TiledMap_GetTileProps(currentTile) or {};
         currentTileType = currentTileProps.type or currentTile
+
+        currentTileBelow = TiledMap_GetMapTile(x, y + 1, z)
+        currentTileBelowProps = TiledMap_GetTileProps(currentTileBelow) or {};
+        currentTileBelowType = currentTileBelowProps.type or currentTileBelow
+
         debug.update(debug_sometext, x .. "," .. y .. " " .. currentTileType .. " (" .. currentTile .. ")")
 
         if currentTileType == "key" then
@@ -294,11 +303,21 @@ function love.update(dt)
             end
         end
 
-        if love.keyboard.isDown("up") then
+
+        if player.state.name == "climb" and currentTileType ~= "ladder" and currentTileBelowType ~= "ladder" then
+            print("stand")
+            player.state:setState("stand")
+        end
+
+        if love.keyboard.isDown("up") or love.keyboard.isDown("down") then
             --debug.update(debug_sometext, "step1")
-            if currentTileType == "ladder" then
+            if currentTileType == "ladder" or currentTileBelowType == "ladder" then
                 --debug.update(debug_sometext, "step2")
-                player.vy = -0.07
+                if love.keyboard.isDown("up") then
+                    moveY = -1
+                else
+                    moveY = 1
+                end
                 player.state:setState("climb")
     --        else
                 --player.vy = 0
@@ -319,9 +338,21 @@ function love.update(dt)
         player.vx = player.vx * 0.9
     end
 
+    if moveY ~= 0 then
+        player.vy = player.vy + moveY * player.speed * dt
+    else
+        -- deccelerate
+        if player.state.name == "climb" then
+            player.vy = player.vy * 0.9
+        end
+    end
 
-    if math.abs(player.vx) < 0.001 then
+
+    if math.abs(player.vx) < 0.0001 then
         player.vx = 0
+    end
+    if math.abs(player.vy) < 0.0001 then
+        player.vy = 0
     end
 
     for i, entity in ipairs(entities) do
@@ -338,7 +369,7 @@ function love.update(dt)
         cam.y = player.y * FIELD_SIZE
     end
 
-    
+
 	debug.update(fps, love.timer.getFPS())
 
     tile = TiledMap_GetMapTile(math.floor(player.x), math.floor(player.y), z)
@@ -359,17 +390,13 @@ function love.keypressed(key, unicode)
 		debug.toggle()
 	end
 	debug.update(debug_keypressed, key)
-    if key == "p" then -- show/hide with "s"
+    if key == "p" then
         paused = not paused
     end
 
 end
 
 function love.keyreleased( key, unicode )
-	if key == "up" and player.state.name ~= "dead" and player.state.name ~= "exit" then
-		player.vy = 0
-		player.state:setState("stand")
-	end
 end
 
 function love.draw()
@@ -378,14 +405,14 @@ function love.draw()
     -- render map
     TiledMap_DrawNearCam(cam.x,cam.y)
 
-    -- render player    
+    -- render player
     local mapOffsetX = love.graphics.getWidth() / 2 - cam.x
     local mapOffsetY = love.graphics.getHeight() / 2 - cam.y
-    local alpha = 255
 
     for i, entity in ipairs(entities) do
         local offsetX = mapOffsetX + entity.x * FIELD_SIZE
         local offsetY = mapOffsetY + (entity.y + 0.5) * FIELD_SIZE
+        local alpha = 255
         local sprite = nil
         local angle = nil
         local scale = nil
@@ -396,7 +423,7 @@ function love.draw()
             else
                 sprite = sprites.playerRight
             end
-            
+
             if stateName == "start" then
                 alpha = math.floor(player.state:getProgress() * 255)
             elseif stateName == "exit" then
@@ -407,7 +434,7 @@ function love.draw()
             elseif stateName == "dead" then
                 sprite = sprites.playerDead
                 angle = math.pi * 4.0 * entity.state:getProgress()
-                scale = 1.0 + math.sin(angle * 2.0)
+                scale = 1.0 + math.sin(angle * 2.0) * 0.5
             end
         elseif entity.type == "monster" then
             if entity.dx < 0 then
@@ -430,7 +457,7 @@ function love.draw()
         love.graphics.rectangle("line", mapOffsetX + offsetX, mapOffsetY + offsetY, FIELD_SIZE, FIELD_SIZE)
     end
     --love.graphics.rectangle("line", 0, 0, FIELD_SIZE, FIELD_SIZE)
-    
+
     -- debug
     debug.draw()
 end

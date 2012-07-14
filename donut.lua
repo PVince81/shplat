@@ -78,7 +78,7 @@ function Donut.init(x, y)
 	function self.draw(xoffset, yoffset)
 		if self.__debugMode then
 			love.graphics.setColor(255, 0, 0)
-			
+
 			xoffset = xoffset or 0
 			yoffset = yoffset or 0
 

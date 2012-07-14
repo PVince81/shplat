@@ -12,7 +12,7 @@ function Entity.create(type)
     entity.vx = 0
     entity.vy = 0
     entity.dx = 1
-    entity.dy = 0    
+    entity.dy = 0
     entity.type = type
     entity.state = State.create("stand")
     return entity
