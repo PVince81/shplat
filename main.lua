@@ -1,4 +1,5 @@
 require "model"
+require("donut")
 
 FIELD_SIZE = 25
 
@@ -39,8 +40,8 @@ end
 function love.load()
 
     TiledMap_Load("map/map1.tmx", FIELD_SIZE)
-    player.x = 1
-    player.y = 12
+    player.x = 2
+    player.y = 11.5
     cam.x = player.x * FIELD_SIZE
     cam.y = player.y * FIELD_SIZE
     -- TODO: use sprites from tiled map?
@@ -54,6 +55,10 @@ function love.load()
 
     --player.x = level.playerStartX
     --player.y = level.playerStartY
+	
+	debug = Donut.init(10, 10)
+	fps = debug.add("FPS")
+	random = debug.add("Random")
 end
 
 function love.update(dt)
@@ -96,7 +101,16 @@ function love.update(dt)
     player.y = target.y
 
     cam.x = player.x * FIELD_SIZE
-    cam.y = player.y * FIELD_SIZE    
+    cam.y = player.y * FIELD_SIZE  
+
+	debug.update(fps, love.timer.getFPS())
+	debug.update(random, math.random(0, 100))	
+end
+
+function love.keypressed(key, unicode)
+	if key == "s" then -- show/hide with "s"
+		debug.toggle()
+	end
 end
 
 function love.keyreleased( key, unicode )
@@ -142,4 +156,5 @@ function love.draw()
     tile = TiledMap_GetMapTile(math.floor(player.x), math.floor(player.y), 1)
     
     love.graphics.print(tile, 0, love.graphics.getHeight() - 20)
+	debug.draw()
 end
