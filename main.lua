@@ -49,7 +49,7 @@ function love.load()
     debug = Donut.init(10, 10)
     fps = debug.add("FPS")
     --random = debug.add("Random")
-    debug_playerPos = debug.add("Player pos")
+    
     debug_currentTile = debug.add("Current tile")
     
 
@@ -62,7 +62,7 @@ function love.load()
 	debug_player_y = debug.add("Player.y")
 	debug_player_vx = debug.add("Player.vx")
 	debug_player_vy = debug.add("Player.vy")
-	
+	debug_player_state = debug.add("Player.state")
 	
 end
 
@@ -179,6 +179,7 @@ function love.update(dt)
 	debug.update(debug_player_y, player.y)
 	debug.update(debug_player_vx, player.vx)
 	debug.update(debug_player_vy, player.vy)
+	debug.update(debug_player_state,player.state)
 end
 
 function love.keypressed(key, unicode)
