@@ -426,6 +426,10 @@ function love.draw()
         local sprite = nil
         local angle = nil
         local scale = nil
+        local shearX = nil
+        local shearY = nil
+        local originX = 12.5
+        local originY = 12.5
         local stateName = entity.state.name
         if entity.type == "player" then
             if player.dx < 0 then
@@ -452,11 +456,14 @@ function love.draw()
             else
                 sprite = sprites.monsterRight
             end
+            shearX = math.sin(entity.x * 2.0) * 0.15
+            originY = 25
+            offsetY = offsetY + 12.5
         end
 
         if stateName ~= "hidden" then
             love.graphics.setColor(255, 255, 255, alpha)
-            love.graphics.drawq(spritesImage, sprite, offsetX, offsetY, angle, scale, scale, 12.5, 12.5)
+            love.graphics.drawq(spritesImage, sprite, offsetX, offsetY, angle, scale, scale, originX, originY, shearX, shearY)
         end
     end
 
