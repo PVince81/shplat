@@ -3,6 +3,10 @@ require("donut")
 
 FIELD_SIZE = 25
 
+gravity = {
+    x= 0,
+    y= 0.004
+}
 level = nil
 player = {
             -- position
@@ -21,6 +25,7 @@ player = {
 			-- state
 			state="stand"
         }
+entities = {}
 cam = {x=0, y=0}
 sprites = nil
 
@@ -36,6 +41,8 @@ function loadSprites()
     sprites.playerRight = love.graphics.newQuad(0, 0, FIELD_SIZE, FIELD_SIZE, spritesImage:getWidth(), spritesImage:getHeight())
     sprites.playerLeft = love.graphics.newQuad(FIELD_SIZE, 0, FIELD_SIZE, FIELD_SIZE, spritesImage:getWidth(), spritesImage:getHeight())
     sprites.playerUp = love.graphics.newQuad(FIELD_SIZE * 2, 0, FIELD_SIZE, FIELD_SIZE, spritesImage:getWidth(), spritesImage:getHeight())
+    sprites.monsterRight = love.graphics.newQuad(0, FIELD_SIZE, FIELD_SIZE, FIELD_SIZE, spritesImage:getWidth(), spritesImage:getHeight())
+    sprites.monsterLeft = love.graphics.newQuad(FIELD_SIZE, FIELD_SIZE, FIELD_SIZE, FIELD_SIZE, spritesImage:getWidth(), spritesImage:getHeight())
 end
 
 function love.load()
@@ -49,6 +56,7 @@ function love.load()
     loadSprites()
 
     loadLevel(1)
+    
     z = TiledMap_GetLayerZByName("blocks")
 	debug_player_x = debug.add("Player.x")
 	debug_player_y = debug.add("Player.y")
@@ -58,14 +66,23 @@ function love.load()
 	
 end
 
+function updateEntity(entity, dt)
+end
+
+function updateMonster(entity, dt)
+    local dirX = entity.dx
+    entity.vx = dirX * 0.1
+    updateEntity(entity, dt)
+end
+
 function love.update(dt)
     if dt < 1/60 then
       love.timer.sleep((1/60 - dt))
     end
     
-    moveX = 0
-    dirX = 0
-    dirY = 0
+    local moveX = 0
+    local dirX = 0
+    local dirY = 0
     if love.keyboard.isDown("right") then
         moveX = 1
         player.dx = 1
@@ -96,11 +113,16 @@ function love.update(dt)
         -- deccelerate
         player.vx = player.vx * 0.9
     end
+
+    -- gravity
+    player.vy = player.vy + gravity.y
+    
     if math.abs(player.vx) < 0.001 then
         player.vx = 0
     end
 
     dirX = player.vx / math.abs(player.vx)
+    dirY = player.vy / math.abs(player.vy)
     if math.abs(player.vx) > player.maxSpeed then
         player.vx = player.maxSpeed * dirX
     end
@@ -111,11 +133,17 @@ function love.update(dt)
     }
 
     -- TODO: add collision detection
-    targetTile = TiledMap_GetMapTile(math.floor(target.x + dirX * 0.5), math.floor(target.y + dirY * 0.5), z)
-    targetTileProps = TiledMap_GetTileProps(targetTile) or {};
-    if targetTileProps.type == "wall" then
+    targetTileX = TiledMap_GetMapTile(math.floor(target.x + dirX * 0.5), math.floor(target.y), z)
+    targetTileY = TiledMap_GetMapTile(math.floor(target.x), math.floor(target.y + dirY), z)
+    targetTilePropsX = TiledMap_GetTileProps(targetTileX) or {};
+    targetTilePropsY = TiledMap_GetTileProps(targetTileY) or {};
+    if targetTilePropsX.type == "wall" then
         target.x = player.x
+        player.vx = 0
+    end
+    if targetTilePropsY.type == "wall" then
         target.y = player.y
+        player.vy = 0
     end
 
     player.x = target.x
@@ -126,6 +154,12 @@ function love.update(dt)
     cam.x = player.x * FIELD_SIZE
     cam.y = player.y * FIELD_SIZE  
 
+    for i, entity in ipairs(entities) do
+        if entity.type == "monster" then
+            updateMonster(entity, dt)
+        end
+    end
+    
 	debug.update(fps, love.timer.getFPS())
 
     tile = TiledMap_GetMapTile(math.floor(player.x), math.floor(player.y), z)
@@ -159,18 +193,28 @@ function love.draw()
     TiledMap_DrawNearCam(cam.x,cam.y)
 
     -- render player    
-    mapOffsetX = love.graphics.getWidth() / 2 - cam.x
-    mapOffsetY = love.graphics.getHeight() / 2 - cam.y
-    
-    if player.dx < 0 then
-        playerSprite = sprites.playerLeft
-    else
-        playerSprite = sprites.playerRight
-    end
+    local mapOffsetX = love.graphics.getWidth() / 2 - cam.x
+    local mapOffsetY = love.graphics.getHeight() / 2 - cam.y
 
-    offsetX = mapOffsetX + (player.x - 0.5) * FIELD_SIZE
-    offsetY = mapOffsetY + player.y  * FIELD_SIZE -- - FIELD_SIZE
-    love.graphics.drawq(spritesImage, playerSprite, offsetX, offsetY)
+    for i, entity in ipairs(entities) do
+        local offsetX = mapOffsetX + (entity.x - 0.5) * FIELD_SIZE
+        local offsetY = mapOffsetY + entity.y  * FIELD_SIZE
+        local sprite = nil
+        if entity.type == "player" then
+            if player.dx < 0 then
+                sprite = sprites.playerLeft
+            else
+                sprite = sprites.playerRight
+            end
+        elseif entity.type == "monster" then
+            if monster.dx < 0 then
+                sprite = sprites.monsterLeft
+            else
+                sprite = sprites.monsterRight
+            end
+        end
+        love.graphics.drawq(spritesImage, sprite, offsetX, offsetY)
+    end
 
     -- debug
 	debug.draw()
