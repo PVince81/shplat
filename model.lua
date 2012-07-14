@@ -1,3 +1,5 @@
+require("entity")
+
 love.filesystem.load("lib/tiledmap.lua")()
 
 local blocksLayer
@@ -32,16 +34,13 @@ function loadLevel(num)
                     player.dx = 1
                 end
             elseif tileProps and tileProps.name == "monster" then
-                local monster = {
-                    x = x + 0.5,
-                    y = y,
-                    vx = 0,
-                    vy = 0,
-                    dx = 0,
-                    dy = 0,
-                    maxSpeed = 0.05,
-                    type = "monster"
-                }
+                local monster = Entity.create("monster")
+                monster.x = x + 0.5
+                monster.y = y
+                monster.vx = 0
+                monster.vy = 0
+                monster.dy = 0
+                monster.maxSpeed = 0.05
                 if tileProps.direction == "left" then
                     monster.dx = -1
                 else
