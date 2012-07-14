@@ -1,4 +1,4 @@
-require "model"
+require("model")
 require("donut")
 
 FIELD_SIZE = 25
@@ -68,16 +68,55 @@ function love.load()
 	debug_sometext = debug.add("debugsometext")
 end
 
-function updateEntity(entity, dt)
+function getBoundingBox(entity)
+    -- entity coords always based on feet
+    return {
+        x1 = entity.x - 0.5,
+        y1 = entity.y + 0.1,
+        x2 = entity.x + 0.5,
+        y2 = entity.y + 0.9
+    }
+end
 
+function checkRectCollision(rect1, rect2)
+    left1 = rect1.x1
+    left2 = rect2.x1
+    top1 = rect1.y1
+    top2 = rect2.y1
+    right1 = rect1.x2
+    right2 = rect2.x2
+    bottom1 = rect1.y2
+    bottom2 = rect2.y2
+    if bottom1 <= top2 then
+        return false
+    end
+    if top1 >= bottom2 then
+        return false
+    end
+    if right1 <= left2 then
+        return false
+    end
+    if left1 >= right2 then
+        return false
+    end
+    return true
+end
+
+function updateEntity(entity, dt)
+    local dirX = 0
+    local dirY = 0
+    
     -- gravity
     if entity.state ~= "climb" then
         entity.vy = entity.vy + gravity.y
     end
 
-   
-    local dirX = entity.vx / math.abs(entity.vx)
-    local dirY = entity.vy / math.abs(entity.vy)
+    if entity.vx ~= 0 then
+        dirX = entity.vx / math.abs(entity.vx)
+    end
+    if entity.vy ~= 0 then
+        dirY = entity.vy / math.abs(entity.vy)
+    end
     if math.abs(entity.vx) > entity.maxSpeed then
         entity.vx = entity.maxSpeed * dirX
     end
@@ -87,18 +126,55 @@ function updateEntity(entity, dt)
         y = entity.y + entity.vy
     }
 
-    -- TODO: add collision detection
-    targetTileX = TiledMap_GetMapTile(math.floor(target.x + dirX * 0.5), math.floor(target.y), z)
-    targetTileY = TiledMap_GetMapTile(math.floor(target.x), math.floor(target.y + dirY), z)
-    targetTilePropsX = TiledMap_GetTileProps(targetTileX) or {};
-    targetTilePropsY = TiledMap_GetTileProps(targetTileY) or {};
-    if targetTilePropsX.type == "wall" then
-        target.x = entity.x
-        entity.vx = 0
+    -- collision detection
+    local bb = getBoundingBox(entity)
+    if dirX ~= 0 then
+        local mapX = math.floor(target.x) + dirX
+        bb.x1 = bb.x1 + entity.vx
+        bb.x2 = bb.x2 + entity.vx
+
+        local mapY1 = math.floor(bb.y1) - 1
+        local mapY2 = math.floor(bb.y2) + 1
+        
+        local tiles = getMapRange(mapX, mapY1, mapX, mapY2)
+        local hasCollision = false
+        for i,tile in ipairs(tiles) do
+            local tileProps = TiledMap_GetTileProps(tile)
+            if tileProps and tileProps.type == "wall" then
+                local wallBB = {
+                    x1 = mapX,
+                    y1 = mapY1 + i - 1,
+                    x2 = mapX + 1,
+                    y2 = mapY1 + i
+                }
+                if checkRectCollision(bb, wallBB) then
+                    hasCollision = true
+                    break
+                end
+            end
+        end
+
+        --targetTileX = TiledMap_GetMapTile(mapX, mapY, z)
+        --targetTilePropsX = TiledMap_GetTileProps(targetTileX) or {};
+        --if targetTilePropsX.type == "wall" then
+        if hasCollision then
+            --target.x = entity.x
+            if dirX > 0 then
+                target.x = math.floor(mapX) - 0.5
+            else
+                target.x = math.floor(mapX) + 1.5
+            end
+            entity.vx = 0
+        end
     end
-    if targetTilePropsY.type == "wall" then
-        target.y = entity.y
-        entity.vy = 0
+    
+    if dirY ~= 0 then
+        targetTileY = TiledMap_GetMapTile(math.floor(target.x), math.floor(target.y + dirY), z)
+        targetTilePropsY = TiledMap_GetTileProps(targetTileY) or {};
+        if targetTilePropsY.type == "wall" then
+            target.y = entity.y
+            entity.vy = 0
+        end
     end
 
     entity.x = target.x

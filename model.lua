@@ -1,5 +1,8 @@
 love.filesystem.load("lib/tiledmap.lua")()
 
+local blocksLayer
+local entitiesLayer
+
 FIELD_EMPTY = 0
 FIELD_BLOCK = 1
 FIELD_LADDER = 2
@@ -10,14 +13,14 @@ function loadLevel(num)
     local w = TiledMap_GetMapW()
     local h = TiledMap_GetMapH()
 
-    local z = TiledMap_GetLayerZByName("entities")
-
+    entitiesLayer = TiledMap_GetLayerZByName("entities")
+    blocksLayer = TiledMap_GetLayerZByName("blocks")
 
     entities = {}
     table.insert(entities, player)
     for x = 0,w - 1 do
         for y = 0, h - 1 do
-            local tile = TiledMap_GetMapTile(x, y, z)
+            local tile = TiledMap_GetMapTile(x, y, entitiesLayer)
             local tileProps = TiledMap_GetTileProps(tile)
             if tileProps and tileProps.name == "player" then
                 player.x = x + 0.5
@@ -49,5 +52,30 @@ function loadLevel(num)
         end
     end
     TiledMap_SetLayerInvisByName("entities")
-    
+end
+
+function getMapRange(x1, y1, x2, y2)
+    local fields = {}
+    local z = TiledMap_GetLayerZByName("blocks")
+    if x2 < x1 then
+        aux = x1
+        x1 = x2
+        x2 = aux
+    end
+    if y2 < y1 then
+        aux = y1
+        y1 = y2
+        y2 = aux
+    end
+
+    x1 = math.max(0, x1)
+    y1 = math.max(0, y1)
+    x2 = math.min(TiledMap_GetMapW(), x2)
+    y2 = math.min(TiledMap_GetMapH(), y2)
+    for x=x1,x2 do
+        for y=y1,y2 do
+            table.insert(fields, TiledMap_GetMapTile(x, y, blocksLayer))
+        end
+    end
+    return fields
 end

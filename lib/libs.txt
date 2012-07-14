@@ -1,2 +1,1 @@
 TiledMapLoader: https://love2d.org/wiki/TiledMapLoader
-Base64 lib: https://github.com/toastdriven/lua-base64
