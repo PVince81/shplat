@@ -29,36 +29,22 @@ end
 
 function loadSprites()
     sprites = {}
-    spritesImage = love.graphics.newImage("sprites.png")
-    sprites.block = love.graphics.newQuad(0, 0, FIELD_SIZE, FIELD_SIZE, spritesImage:getWidth(), spritesImage:getHeight())
-    sprites.ladder = love.graphics.newQuad(FIELD_SIZE, 0, FIELD_SIZE, FIELD_SIZE, spritesImage:getWidth(), spritesImage:getHeight())
-
-    sprites.playerRight = love.graphics.newQuad(0, FIELD_SIZE, FIELD_SIZE, FIELD_SIZE, spritesImage:getWidth(), spritesImage:getHeight())
-    sprites.playerLeft = love.graphics.newQuad(FIELD_SIZE, FIELD_SIZE, FIELD_SIZE, FIELD_SIZE, spritesImage:getWidth(), spritesImage:getHeight())
+    spritesImage = love.graphics.newImage("entities.png")
+    sprites.playerRight = love.graphics.newQuad(0, 0, FIELD_SIZE, FIELD_SIZE, spritesImage:getWidth(), spritesImage:getHeight())
+    sprites.playerLeft = love.graphics.newQuad(FIELD_SIZE, 0, FIELD_SIZE, FIELD_SIZE, spritesImage:getWidth(), spritesImage:getHeight())
+    sprites.playerUp = love.graphics.newQuad(FIELD_SIZE * 2, 0, FIELD_SIZE, FIELD_SIZE, spritesImage:getWidth(), spritesImage:getHeight())
 end
 
 function love.load()
+    debug = Donut.init(10, 10)
+    fps = debug.add("FPS")
+    --random = debug.add("Random")
+    debug_currentTile = debug.add("Current tile")
 
-    TiledMap_Load("map/map1.tmx", FIELD_SIZE)
-    player.x = 2
-    player.y = 11.5
-    cam.x = player.x * FIELD_SIZE
-    cam.y = player.y * FIELD_SIZE
-    -- TODO: use sprites from tiled map?
     loadSprites()
 
---    level = loadLevel(1)
-    --saveLevel(1, level)
-    
-    --level = loadLevelOld(1)
---    player = createPlayer()
-
-    --player.x = level.playerStartX
-    --player.y = level.playerStartY
-	
-	debug = Donut.init(10, 10)
-	fps = debug.add("FPS")
-	random = debug.add("Random")
+    loadLevel(1)
+    z = TiledMap_GetLayerZByName("blocks")
 end
 
 function love.update(dt)
@@ -89,13 +75,13 @@ function love.update(dt)
         y = player.y + player.vy
     }
 
-    -- TODO: add collision detection    
+    -- TODO: add collision detection
     targetTile = TiledMap_GetMapTile(math.floor(target.x), math.floor(target.y), 1)
-    if targetTile == 1 then
+    targetTileProps = TiledMap_GetTileProps(targetTile) or {};    
+    if targetTileProps.type == "wall" then
         target.x = player.x
         target.y = player.y
     end
-    
     
     player.x = target.x
     player.y = target.y
@@ -104,7 +90,11 @@ function love.update(dt)
     cam.y = player.y * FIELD_SIZE  
 
 	debug.update(fps, love.timer.getFPS())
-	debug.update(random, math.random(0, 100))	
+
+    tile = TiledMap_GetMapTile(math.floor(player.x), math.floor(player.y), z)
+    tileProps = TiledMap_GetTileProps(tile) or {};
+    tileType = tileProps.type or tile
+    debug.update(debug_currentTile, tileType)
 end
 
 function love.keypressed(key, unicode)
@@ -119,25 +109,9 @@ end
 function love.draw()
     love.graphics.setColor(255, 255, 255, 255)
 
+    -- render map
     TiledMap_DrawNearCam(cam.x,cam.y)
 
-    -- render map
---     offsetY = 0
---     for y=0,level.height do
---         row = level.fields[y]
---         offsetX = 0
---         for x=0,level.width do
---             field = row[x]
---             if field == FIELD_BLOCK then
---                 love.graphics.drawq(spritesImage, sprites.block, offsetX, offsetY)
---             elseif field == FIELD_LADDER then
---                 love.graphics.drawq(spritesImage, sprites.ladder, offsetX, offsetY)
---             end
---             offsetX = offsetX + FIELD_SIZE
---         end
---         offsetY = offsetY + FIELD_SIZE
---     end
--- 
     -- render player    
     mapOffsetX = love.graphics.getWidth() / 2 - cam.x
     mapOffsetY = love.graphics.getHeight() / 2 - cam.y
@@ -153,8 +127,5 @@ function love.draw()
     love.graphics.drawq(spritesImage, playerSprite, offsetX, offsetY)
 
     -- debug
-    tile = TiledMap_GetMapTile(math.floor(player.x), math.floor(player.y), 1)
-    
-    love.graphics.print(tile, 0, love.graphics.getHeight() - 20)
 	debug.draw()
 end

@@ -13,6 +13,8 @@ local max = math.max
 local min = math.min
 local abs = math.abs
 gTileMap_LayerInvisByName = {}
+gTileDefs = {}
+gTileProps = {}
 
 function TiledMap_Load (filepath,tilesize,spritepath_removeold,spritepath_prefix)
     spritepath_removeold = spritepath_removeold or "../"
@@ -21,12 +23,14 @@ function TiledMap_Load (filepath,tilesize,spritepath_removeold,spritepath_prefix
     gTileGfx = {}
    
     local tiletype,layers = TiledMap_Parse(filepath)
+    gTileDefs = tiletype
     gMapLayers = layers
-    for first_gid,path in pairs(tiletype) do
+    for i, tileDef in ipairs(tiletype) do
+        local path = tileDef.source
         path = spritepath_prefix .. string.gsub(path,"^"..string.gsub(spritepath_removeold,"%.","%%."),"")
         local raw = love.image.newImageData(path)
         local w,h = raw:getWidth(),raw:getHeight()
-        local gid = first_gid
+        local gid = tileDef.firstgid
         local e = kTileSize
         for y=0,floor(h/kTileSize)-1 do
         for x=0,floor(w/kTileSize)-1 do
@@ -39,6 +43,7 @@ function TiledMap_Load (filepath,tilesize,spritepath_removeold,spritepath_prefix
     end
 end
 
+function TiledMap_GetTileProps (tileId) return gTileProps[tileId] end
 function TiledMap_GetMapW () return gMapLayers.width end
 function TiledMap_GetMapH () return gMapLayers.height end
 
@@ -66,7 +71,7 @@ end
 -- if x,y can be far outside map, set a sensible maxrad, otherwise it'll get very slow since searching outside map isn't optimized
 function TiledMap_GetNearestTileByTypeOnLayer (x,y,z,iTileType,maxrad)
     local w = TiledMap_GetMapW()
-    local h = TiledMap_GetMapW()
+    local h = TiledMap_GetMapH()
     local maxrad2 = max(x,w-x,y,h-y) if (maxrad) then maxrad2 = min(maxrad2,maxrad) end
     if (TiledMap_GetMapTile(x,y,z) == iTileType) then return x,y end
     for r = 1,maxrad2 do
@@ -199,8 +204,32 @@ local function getTilesets(node)
     local tiles = {}
     for k, sub in ipairs(node) do
         if (sub.label == "tileset") then
-            tiles[tonumber(sub.xarg.firstgid)] = sub[1].xarg.source
-            -- TODO: load properties
+            local firstgid = tonumber(sub.xarg.firstgid)
+            local tileset = {}
+            for l, sub2 in ipairs(sub) do
+                if (sub2.label == "image") then
+                    tileset = {
+                        source = sub2.xarg.source,
+                        firstgid = firstgid
+                    }
+                elseif (sub2.label == "tile") then
+                    local tileId = sub2.xarg.id + firstgid
+                    gTileProps[tileId] = {}
+                    for m, sub3 in ipairs(sub2[1]) do
+                        gTileProps[tileId][sub3.xarg.name] = sub3.xarg.value
+                    end
+                end
+                table.insert(tiles, tileset)
+            end
+            
+-- 
+--             -- TODO: load properties
+--             for l, sub2 in ipairs(sub[2]) do
+--                 print(sub2.xarg.id)
+--                 for m, prop in ipairs(sub2) do
+--                 --    print(prop)
+--                 end
+--             end
         end
     end
     return tiles
