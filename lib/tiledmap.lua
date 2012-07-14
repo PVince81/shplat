@@ -200,18 +200,27 @@ end
 
 -- ***** ***** ***** ***** ***** parsing the tilemap xml file
 
+local function loadTileset(filename)
+    -- FIXME: don't hardcode path
+    local xml = LoadXML(love.filesystem.read("map/" .. filename))
+    return xml
+end
+
 local function getTilesets(node)
     local tiles = {}
     for k, sub in ipairs(node) do
         if (sub.label == "tileset") then
             local firstgid = tonumber(sub.xarg.firstgid)
             local tileset = {}
-            for l, sub2 in ipairs(sub) do
+            local xml = sub
+            if sub.xarg.source then
+                xml = loadTileset(sub.xarg.source)
+                xml = xml[2]
+            end
+
+            for l, sub2 in ipairs(xml) do
                 if (sub2.label == "image") then
-                    tileset = {
-                        source = sub2.xarg.source,
-                        firstgid = firstgid
-                    }
+                    tileset.source = sub2.xarg.source
                 elseif (sub2.label == "tile") then
                     local tileId = sub2.xarg.id + firstgid
                     gTileProps[tileId] = {}
@@ -219,8 +228,9 @@ local function getTilesets(node)
                         gTileProps[tileId][sub3.xarg.name] = sub3.xarg.value
                     end
                 end
-                table.insert(tiles, tileset)
             end
+            tileset.firstgid = firstgid
+            table.insert(tiles, tileset)
         end
     end
     return tiles

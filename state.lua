@@ -13,7 +13,7 @@ function State.create(name)
 end
 
 function State:step(delta)
-    if self.nextState then
+    if self.maxTime > 0 then
         self.time = self.time + delta
         if self.time > self.maxTime then
             self:setState(self.nextState)

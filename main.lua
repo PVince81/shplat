@@ -68,6 +68,7 @@ function start()
     loadLevel(currentLevel)
     z = TiledMap_GetLayerZByName("blocks")
     game.state:setState("running")
+    player.state:setState("start", 1, "stand")
 end
 
 function getBoundingBox(entity)
@@ -110,7 +111,7 @@ function updateEntity(entity, dt)
 
     entity.state:step(dt)
 
-    if entity.state.name == "dead" then
+    if entity.state.name == "dead" or entity.state.name == "exit" then
         return
     end
     
@@ -252,6 +253,9 @@ function love.update(dt)
 
     if game.state.name == "restart" then
         start()
+    elseif game.state.name == "nextlevel" then
+        currentLevel = currentLevel + 1
+        start()
     end
     game.state:step(dt)
     
@@ -271,13 +275,14 @@ function love.update(dt)
     end
 
 
-    if player.state.name ~= "dead" then
+    if player.state.name ~= "dead" and player.state.name ~= "exit" then
+        currentTile = TiledMap_GetMapTile(math.floor(player.x), math.floor(player.y), z)
+        currentTileProps = TiledMap_GetTileProps(currentTile) or {};
+        currentTileType = currentTileProps.type or currentTile
+        debug.update(debug_sometext, currentTileType)
+
         if love.keyboard.isDown("up") then
             --debug.update(debug_sometext, "step1")
-            currentTile = TiledMap_GetMapTile(math.floor(player.x), math.floor(player.y), z)
-            currentTileProps = TiledMap_GetTileProps(currentTile) or {};
-            currentTileType = currentTileProps.type or currentTile
-            debug.update(debug_sometext, currentTileType)
             if currentTileType == "ladder" then
                 --debug.update(debug_sometext, "step2")
                 player.vy = -0.07
@@ -285,6 +290,9 @@ function love.update(dt)
     --        else
                 --player.vy = 0
         --       player.state = "stand"
+            elseif currentTileType == "exit" then
+                player.state:setState("exit", 1.5, "hidden")
+                game.state:setState("exit", 1.5, "nextlevel")
             end
         end
     else
@@ -344,7 +352,7 @@ function love.keypressed(key, unicode)
 end
 
 function love.keyreleased( key, unicode )
-	if key == "up" and player.state ~= "dead" then
+	if key == "up" and player.state.name ~= "dead" and player.state.name ~= "exit" then
 		player.vy = 0
 		player.state:setState("stand")
 	end
@@ -359,6 +367,7 @@ function love.draw()
     -- render player    
     local mapOffsetX = love.graphics.getWidth() / 2 - cam.x
     local mapOffsetY = love.graphics.getHeight() / 2 - cam.y
+    local alpha = 255
 
     for i, entity in ipairs(entities) do
         local offsetX = mapOffsetX + entity.x * FIELD_SIZE
@@ -366,17 +375,25 @@ function love.draw()
         local sprite = nil
         local angle = nil
         local scale = nil
+        local stateName = entity.state.name
         if entity.type == "player" then
-            if player.state.name == "climb" then
-                sprite = sprites.playerUp
-            elseif player.state.name == "dead" then
-                sprite = sprites.playerDead
-                angle = math.pi * 4.0 * entity.state:getProgress()
-                scale = 1.0 + math.sin(angle * 2.0)
-            elseif player.dx < 0 then
+            if player.dx < 0 then
                 sprite = sprites.playerLeft
             else
                 sprite = sprites.playerRight
+            end
+            
+            if stateName == "start" then
+                alpha = math.floor(player.state:getProgress() * 255)
+            elseif stateName == "exit" then
+                sprite = sprites.playerUp
+                alpha = math.floor((1.0 - player.state:getProgress()) * 255)
+            elseif stateName == "climb" then
+                sprite = sprites.playerUp
+            elseif stateName == "dead" then
+                sprite = sprites.playerDead
+                angle = math.pi * 4.0 * entity.state:getProgress()
+                scale = 1.0 + math.sin(angle * 2.0)
             end
         elseif entity.type == "monster" then
             if entity.dx < 0 then
@@ -385,7 +402,11 @@ function love.draw()
                 sprite = sprites.monsterRight
             end
         end
-        love.graphics.drawq(spritesImage, sprite, offsetX, offsetY, angle, scale, scale, 12.5, 12.5)
+
+        if stateName ~= "hidden" then
+            love.graphics.setColor(255, 255, 255, alpha)
+            love.graphics.drawq(spritesImage, sprite, offsetX, offsetY, angle, scale, scale, 12.5, 12.5)
+        end
     end
 
     -- debug
