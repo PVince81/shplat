@@ -14,9 +14,6 @@ function loadLevel(num)
     for x = 0,w - 1 do
         for y = 0, h - 1 do
             tile = TiledMap_GetMapTile(x, y, z)
-            if tile ~= 0 then
-                print(tile, x, y)
-            end
             tileProps = TiledMap_GetTileProps(tile)
             if tileProps and tileProps.name == "player" then
                 player.x = x

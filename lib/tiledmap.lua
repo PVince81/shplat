@@ -221,15 +221,6 @@ local function getTilesets(node)
                 end
                 table.insert(tiles, tileset)
             end
-            
--- 
---             -- TODO: load properties
---             for l, sub2 in ipairs(sub[2]) do
---                 print(sub2.xarg.id)
---                 for m, prop in ipairs(sub2) do
---                 --    print(prop)
---                 end
---             end
         end
     end
     return tiles
@@ -246,7 +237,6 @@ local function getLayers(node)
             local layer = {}
             table.insert(layers,layer)
             layer.name = sub.xarg.name
-            --~ print("layername",layer.name)
             width = tonumber(sub.xarg.width)
             i = 0
             j = 0

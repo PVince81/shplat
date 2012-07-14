@@ -13,8 +13,9 @@ player = {
             vy=0,
             -- direction
             dx=1,
+            dy=0,
             -- speed
-            speed=0.2,
+            speed=0.4,
             -- max speed
             maxSpeed=0.1
         }
@@ -39,7 +40,9 @@ function love.load()
     debug = Donut.init(10, 10)
     fps = debug.add("FPS")
     --random = debug.add("Random")
+    debug_playerPos = debug.add("Player pos")
     debug_currentTile = debug.add("Current tile")
+    
 
     loadSprites()
 
@@ -54,7 +57,13 @@ function love.load()
 end
 
 function love.update(dt)
+    if dt < 1/60 then
+      love.timer.sleep((1/60 - dt))
+    end
+    
     moveX = 0
+    dirX = 0
+    dirY = 0
     if love.keyboard.isDown("right") then
         moveX = 1
         player.dx = 1
@@ -65,9 +74,6 @@ function love.update(dt)
 
     if moveX ~= 0 then
         player.vx = player.vx + moveX * player.speed * dt
-        if math.abs(player.vx) > player.maxSpeed then
-            player.vx = player.maxSpeed * player.vx / math.abs(player.vx)
-        end
     else
         -- deccelerate
         player.vx = player.vx * 0.9
@@ -76,22 +82,29 @@ function love.update(dt)
         player.vx = 0
     end
 
+    dirX = player.vx / math.abs(player.vx)
+    if math.abs(player.vx) > player.maxSpeed then
+        player.vx = player.maxSpeed * dirX
+    end
+    
     target = {
         x = player.x + player.vx,
         y = player.y + player.vy
     }
 
     -- TODO: add collision detection
---[[    targetTile = TiledMap_GetMapTile(math.floor(target.x), math.floor(target.y), 1)
-    targetTileProps = TiledMap_GetTileProps(targetTile) or {};    
+    targetTile = TiledMap_GetMapTile(math.floor(target.x + dirX * 0.5), math.floor(target.y + dirY * 0.5), z)
+    targetTileProps = TiledMap_GetTileProps(targetTile) or {};
     if targetTileProps.type == "wall" then
         target.x = player.x
         target.y = player.y
     end
---]]    
+
     player.x = target.x
     player.y = target.y
 
+    debug.update(debug_playerPos, player.x .. " " .. player.y)
+    
     cam.x = player.x * FIELD_SIZE
     cam.y = player.y * FIELD_SIZE  
 
