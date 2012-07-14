@@ -28,6 +28,11 @@
  </tile>
  <tile id="5">
   <properties>
+   <property name="type" value="exit_closed"/>
+  </properties>
+ </tile>
+ <tile id="6">
+  <properties>
    <property name="type" value="exit"/>
   </properties>
  </tile>
@@ -49,6 +54,11 @@
  <tile id="20">
   <properties>
    <property name="type" value="wall"/>
+  </properties>
+ </tile>
+ <tile id="21">
+  <properties>
+   <property name="type" value="key"/>
   </properties>
  </tile>
 </tileset>

@@ -8,6 +8,8 @@ local entitiesLayer
 FIELD_EMPTY = 0
 FIELD_BLOCK = 1
 FIELD_LADDER = 2
+FIELD_EXITDOORCLOSED = 6
+FIELD_EXITDOOR = 7
 
 function loadLevel(num)
     TiledMap_Load("map/map" .. tostring(num) .. ".tmx", FIELD_SIZE)
@@ -19,11 +21,18 @@ function loadLevel(num)
     blocksLayer = TiledMap_GetLayerZByName("blocks")
 
     entities = {}
+    game.keys = 0
     table.insert(entities, player)
     for x = 0,w - 1 do
         for y = 0, h - 1 do
+            local blockTile = TiledMap_GetMapTile(x, y, blocksLayer)
+            local blockTileProps = TiledMap_GetTileProps(blockTile)
             local tile = TiledMap_GetMapTile(x, y, entitiesLayer)
             local tileProps = TiledMap_GetTileProps(tile)
+            if blockTileProps and blockTileProps.type == "key" then
+                game.keys = game.keys + 1
+            end
+
             if tileProps and tileProps.name == "player" then
                 player.x = x + 0.5
                 player.y = y
@@ -77,4 +86,18 @@ function getMapRange(x1, y1, x2, y2)
         end
     end
     return fields
+end
+
+function openExitDoors()
+    local w = TiledMap_GetMapW()
+    local h = TiledMap_GetMapH()
+    for x = 0,w - 1 do
+        for y = 0, h - 1 do
+            local blockTile = TiledMap_GetMapTile(x, y, blocksLayer)
+            local blockTileProps = TiledMap_GetTileProps(blockTile)
+            if blockTileProps and blockTileProps.type == "exit_closed" then
+                TiledMap_SetMapTile(x, y, blocksLayer, FIELD_EXITDOOR)
+            end
+        end
+    end
 end

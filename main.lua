@@ -5,7 +5,6 @@ require("entity")
 
 FIELD_SIZE = 25
 
-currentLevel = 1
 paused = false
 gravity = {
     x= 0,
@@ -17,7 +16,10 @@ player.dx=1
 player.speed=0.4
 player.maxSpeed=0.1
 game = {
-    state = State.create("running")
+    state = State.create("running"),
+    keys = 0,
+    debug = true,
+    currentLevel = 1
 }
 
 entities = {}
@@ -43,8 +45,9 @@ function loadSprites()
 end
 
 function love.load()
-    currentLevel = 1
+    --game.currentLevel = 1
     debug = Donut.init(10, 10)
+    debug.toggle()
     fps = debug.add("FPS")
     --random = debug.add("Random")
     
@@ -61,11 +64,12 @@ function love.load()
     debug_game_state = debug.add("Game.state")
 	debug_keypressed = debug.add("keypressed")
 	debug_sometext = debug.add("debugsometext")
+    debug_keys = debug.add("keys")
     start()
 end
 
 function start()
-    loadLevel(currentLevel)
+    loadLevel(game.currentLevel)
     z = TiledMap_GetLayerZByName("blocks")
     game.state:setState("running")
     player.state:setState("start", 1, "stand")
@@ -254,7 +258,7 @@ function love.update(dt)
     if game.state.name == "restart" then
         start()
     elseif game.state.name == "nextlevel" then
-        currentLevel = currentLevel + 1
+        game.currentLevel = game.currentLevel + 1
         start()
     end
     game.state:step(dt)
@@ -274,12 +278,21 @@ function love.update(dt)
         player.dx = -1
     end
 
-
     if player.state.name ~= "dead" and player.state.name ~= "exit" then
-        currentTile = TiledMap_GetMapTile(math.floor(player.x), math.floor(player.y), z)
+        local x = math.floor(player.x)
+        local y = math.floor(player.y + 0.5)
+        currentTile = TiledMap_GetMapTile(x, y, z)
         currentTileProps = TiledMap_GetTileProps(currentTile) or {};
         currentTileType = currentTileProps.type or currentTile
-        debug.update(debug_sometext, currentTileType)
+        debug.update(debug_sometext, x .. "," .. y .. " " .. currentTileType .. " (" .. currentTile .. ")")
+
+        if currentTileType == "key" then
+            TiledMap_SetMapTile(x, y, z, 0)
+            game.keys = game.keys - 1
+            if game.keys <= 0 then
+                openExitDoors()
+            end
+        end
 
         if love.keyboard.isDown("up") then
             --debug.update(debug_sometext, "step1")
@@ -338,6 +351,7 @@ function love.update(dt)
 	debug.update(debug_player_vy, player.vy)
     debug.update(debug_player_state,player.state.name .. " (" .. player.state:getProgress() .. " )")
     debug.update(debug_game_state,game.state.name .. " (" .. game.state:getProgress() .. " )")
+    debug.update(debug_keys,game.keys)
 end
 
 function love.keypressed(key, unicode)
@@ -409,6 +423,15 @@ function love.draw()
         end
     end
 
+    if debug.__debugMode then
+        love.graphics.setColor(255, 0, 0, 64)
+        local offsetX = math.floor(player.x) * FIELD_SIZE
+        local offsetY = math.floor(player.y + 0.5) * FIELD_SIZE
+        love.graphics.rectangle("line", mapOffsetX + offsetX, mapOffsetY + offsetY, FIELD_SIZE, FIELD_SIZE)
+    end
+    --love.graphics.rectangle("line", 0, 0, FIELD_SIZE, FIELD_SIZE)
+    
     -- debug
-	debug.draw()
+    debug.draw()
 end
+
