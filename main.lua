@@ -67,12 +67,51 @@ function love.load()
 end
 
 function updateEntity(entity, dt)
+
+    -- gravity
+    if entity.state ~= "climb" then
+        entity.vy = entity.vy + gravity.y
+    end
+
+   
+    local dirX = entity.vx / math.abs(entity.vx)
+    local dirY = entity.vy / math.abs(entity.vy)
+    if math.abs(entity.vx) > entity.maxSpeed then
+        entity.vx = entity.maxSpeed * dirX
+    end
+
+    target = {
+        x = entity.x + entity.vx,
+        y = entity.y + entity.vy
+    }
+
+    -- TODO: add collision detection
+    targetTileX = TiledMap_GetMapTile(math.floor(target.x + dirX * 0.5), math.floor(target.y), z)
+    targetTileY = TiledMap_GetMapTile(math.floor(target.x), math.floor(target.y + dirY), z)
+    targetTilePropsX = TiledMap_GetTileProps(targetTileX) or {};
+    targetTilePropsY = TiledMap_GetTileProps(targetTileY) or {};
+    if targetTilePropsX.type == "wall" then
+        target.x = entity.x
+        entity.vx = 0
+    end
+    if targetTilePropsY.type == "wall" then
+        target.y = entity.y
+        entity.vy = 0
+    end
+
+    entity.x = target.x
+    entity.y = target.y
 end
 
 function updateMonster(entity, dt)
     local dirX = entity.dx
-    entity.vx = dirX * 0.1
+    entity.vx = dirX * entity.maxSpeed
     updateEntity(entity, dt)
+    -- couldn't move ?
+    if ( entity.vx == 0 ) then
+        -- change direction
+        entity.dx = -entity.dx
+    end
 end
 
 function love.update(dt)
@@ -115,49 +154,20 @@ function love.update(dt)
         player.vx = 0
     end
 
-    -- gravity
-    if player.state ~= "climb" then
-        player.vy = player.vy + gravity.y
-    end
-    
-    dirX = player.vx / math.abs(player.vx)
-    dirY = player.vy / math.abs(player.vy)
-    if math.abs(player.vx) > player.maxSpeed then
-        player.vx = player.maxSpeed * dirX
-    end
-
-    target = {
-        x = player.x + player.vx,
-        y = player.y + player.vy
-    }
-
-    -- TODO: add collision detection
-    targetTileX = TiledMap_GetMapTile(math.floor(target.x + dirX * 0.5), math.floor(target.y), z)
-    targetTileY = TiledMap_GetMapTile(math.floor(target.x), math.floor(target.y + dirY), z)
-    targetTilePropsX = TiledMap_GetTileProps(targetTileX) or {};
-    targetTilePropsY = TiledMap_GetTileProps(targetTileY) or {};
-    if targetTilePropsX.type == "wall" then
-        target.x = player.x
-        player.vx = 0
-    end
-    if targetTilePropsY.type == "wall" then
-        target.y = player.y
-        player.vy = 0
-    end
-
-    player.x = target.x
-    player.y = target.y
-
-    debug.update(debug_playerPos, player.x .. " " .. player.y)
-    
-    cam.x = player.x * FIELD_SIZE
-    cam.y = player.y * FIELD_SIZE  
-
     for i, entity in ipairs(entities) do
+        if entity.type == "player" then
+            updateEntity(entity, dt)
+        end
         if entity.type == "monster" then
             updateMonster(entity, dt)
         end
     end
+
+    debug.update(debug_playerPos, player.x .. " " .. player.y)
+
+    cam.x = player.x * FIELD_SIZE
+    cam.y = player.y * FIELD_SIZE
+
     
 	debug.update(fps, love.timer.getFPS())
 
@@ -206,7 +216,7 @@ function love.draw()
                 sprite = sprites.playerRight
             end
         elseif entity.type == "monster" then
-            if monster.dx < 0 then
+            if entity.dx < 0 then
                 sprite = sprites.monsterLeft
             else
                 sprite = sprites.monsterRight

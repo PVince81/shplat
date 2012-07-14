@@ -17,8 +17,8 @@ function loadLevel(num)
     table.insert(entities, player)
     for x = 0,w - 1 do
         for y = 0, h - 1 do
-            tile = TiledMap_GetMapTile(x, y, z)
-            tileProps = TiledMap_GetTileProps(tile)
+            local tile = TiledMap_GetMapTile(x, y, z)
+            local tileProps = TiledMap_GetTileProps(tile)
             if tileProps and tileProps.name == "player" then
                 player.x = x + 0.5
                 player.y = y
@@ -29,9 +29,14 @@ function loadLevel(num)
                     player.dx = 1
                 end
             elseif tileProps and tileProps.name == "monster" then
-                monster = {
+                local monster = {
                     x = x + 0.5,
                     y = y,
+                    vx = 0,
+                    vy = 0,
+                    dx = 0,
+                    dy = 0,
+                    maxSpeed = 0.05,
                     type = "monster"
                 }
                 if tileProps.direction == "left" then
