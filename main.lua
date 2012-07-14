@@ -71,10 +71,10 @@ end
 function getBoundingBox(entity)
     -- entity coords always based on feet
     return {
-        x1 = entity.x - 0.5,
+        x1 = entity.x - 0.4,
         y1 = entity.y + 0.1,
-        x2 = entity.x + 0.5,
-        y2 = entity.y + 0.9
+        x2 = entity.x + 0.4,
+        y2 = entity.y + 1.0
     }
 end
 
@@ -127,8 +127,8 @@ function updateEntity(entity, dt)
     }
 
     -- collision detection
-    local bb = getBoundingBox(entity)
     if dirX ~= 0 then
+        local bb = getBoundingBox(entity)
         local mapX = math.floor(target.x) + dirX
         bb.x1 = bb.x1 + entity.vx
         bb.x2 = bb.x2 + entity.vx
@@ -154,9 +154,6 @@ function updateEntity(entity, dt)
             end
         end
 
-        --targetTileX = TiledMap_GetMapTile(mapX, mapY, z)
-        --targetTilePropsX = TiledMap_GetTileProps(targetTileX) or {};
-        --if targetTilePropsX.type == "wall" then
         if hasCollision then
             --target.x = entity.x
             if dirX > 0 then
@@ -167,12 +164,41 @@ function updateEntity(entity, dt)
             entity.vx = 0
         end
     end
-    
+
     if dirY ~= 0 then
-        targetTileY = TiledMap_GetMapTile(math.floor(target.x), math.floor(target.y + dirY), z)
-        targetTilePropsY = TiledMap_GetTileProps(targetTileY) or {};
-        if targetTilePropsY.type == "wall" then
+        local bb = getBoundingBox(entity)
+        local mapY = math.floor(target.y) + dirY
+        bb.y1 = bb.y1 + entity.vy
+        bb.y2 = bb.y2 + entity.vy
+
+        local mapX1 = math.floor(bb.x1) - 1
+        local mapX2 = math.floor(bb.x2) + 1
+
+        local tiles = getMapRange(mapX1, mapY, mapX2, mapY)
+        local hasCollision = false
+        for i,tile in ipairs(tiles) do
+            local tileProps = TiledMap_GetTileProps(tile)
+            if tileProps and tileProps.type == "wall" then
+                local wallBB = {
+                    x1 = mapX1 + i - 1,
+                    y1 = mapY,
+                    x2 = mapX1 + i,
+                    y2 = mapY
+                }
+                if checkRectCollision(bb, wallBB) then
+                    hasCollision = true
+                    break
+                end
+            end
+        end
+
+        if hasCollision then
             target.y = entity.y
+             --if dirY > 0 then
+--                 target.y = math.floor(mapY) - 0.5
+--             else
+--                 target.y = math.floor(mapY) + 1.5
+--             end
             entity.vy = 0
         end
     end
@@ -293,7 +319,9 @@ function love.draw()
         local offsetY = mapOffsetY + entity.y  * FIELD_SIZE
         local sprite = nil
         if entity.type == "player" then
-            if player.dx < 0 then
+            if player.state == "climb" then
+                sprite = sprites.playerUp
+            elseif player.dx < 0 then
                 sprite = sprites.playerLeft
             else
                 sprite = sprites.playerRight
