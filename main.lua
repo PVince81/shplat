@@ -29,6 +29,7 @@ entities = {}
 cam = {x=0, y=0}
 sprites = nil
 
+
 function love.conf(t)
     t.screen.width = 800
     t.screen.height = 600
@@ -63,7 +64,8 @@ function love.load()
 	debug_player_vx = debug.add("Player.vx")
 	debug_player_vy = debug.add("Player.vy")
 	debug_player_state = debug.add("Player.state")
-	
+	debug_keypressed = debug.add("keypressed")
+	debug_sometext = debug.add("debugsometext")
 end
 
 function updateEntity(entity, dt)
@@ -130,15 +132,20 @@ function love.update(dt)
         player.dx = -1
     end
 
+	
 	if love.keyboard.isDown("up") then
-        currentTile = TiledMap_GetMapTile(math.floor(player.x + 0.5), math.floor(player.y + 0.5), z)
-        targetTileProps = TiledMap_GetTileProps(targetTile) or {};
-        if targetTileProps.type == "ladder" then
-            player.vy = -0.07
-            player.state = "climbe"
-        else
+        --debug.update(debug_sometext, "step1")
+		currentTile = TiledMap_GetMapTile(math.floor(player.x), math.floor(player.y), z)
+        currentTileProps = TiledMap_GetTileProps(currentTile) or {};
+		currentTileType = currentTileProps.type or currentTile
+		debug.update(debug_sometext, currentTileType)
+        if currentTileType == "ladder" then
+            --debug.update(debug_sometext, "step2")
+			player.vy = -0.07
+            player.state = "climb"
+--        else
             --player.vy = 0
-            player.state = "stand"
+     --       player.state = "stand"
         end
 	end
 	
@@ -184,6 +191,7 @@ function love.keypressed(key, unicode)
 	if key == "s" then -- show/hide with "s"
 		debug.toggle()
 	end
+	debug.update(debug_keypressed, key)
 
 end
 
