@@ -184,7 +184,7 @@ function updateEntity(entity, dt)
 
     if dirY ~= 0 then
         local bb = getBoundingBox(entity)
-        local mapY = math.floor(target.y) + dirY
+        local mapY = math.floor(target.y + 0.5) + dirY
         bb.y1 = bb.y1 + entity.vy
         bb.y2 = bb.y2 + entity.vy
 
@@ -195,12 +195,13 @@ function updateEntity(entity, dt)
         local hasCollision = false
         for i,tile in ipairs(tiles) do
             local tileProps = TiledMap_GetTileProps(tile)
-            if tileProps and (tileProps.type == "wall" or ( tileProps.type == "ladder" and entity.state.name ~= "climb")) then
+
+            if tileProps and (tileProps.type == "wall" or ( tileProps.type == "ladder" and entity.state.name ~= "climb" and dirY > 0 )) then
                 local wallBB = {
                     x1 = mapX1 + i - 1,
                     y1 = mapY,
                     x2 = mapX1 + i,
-                    y2 = mapY
+                    y2 = mapY + 1
                 }
                 if checkRectCollision(bb, wallBB) then
                     hasCollision = true
@@ -217,6 +218,9 @@ function updateEntity(entity, dt)
 --                 target.y = math.floor(mapY) + 1.5
 --             end
             entity.vy = 0
+            if entity.state.name == "jump" and dirY > 0 then
+                entity.state:setState("stand")
+            end                
         end
     end
 
@@ -305,7 +309,6 @@ function love.update(dt)
 
 
         if player.state.name == "climb" and currentTileType ~= "ladder" and currentTileBelowType ~= "ladder" then
-            print("stand")
             player.state:setState("stand")
         end
 
@@ -326,6 +329,13 @@ function love.update(dt)
                 player.state:setState("exit", 1.5, "hidden")
                 game.state:setState("exit", 1.5, "nextlevel")
             end
+        end
+
+        if player.state.name == "stand" and
+                (love.keyboard.isDown(" ") or love.keyboard.isDown("lctrl") or love.keyboard.isDown("rctrl")) then
+            player.state:setState("jump")
+            moveY = -1
+            player.vy = -0.15
         end
     else
         moveX = 0
