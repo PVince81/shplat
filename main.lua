@@ -92,19 +92,15 @@ function love.update(dt)
     end
 
 	if love.keyboard.isDown("up") then
-
-    currentTile = TiledMap_GetMapTile(math.floor(player.x + 0.5), math.floor(player.y + 0.5), z)
-    targetTileProps = TiledMap_GetTileProps(targetTile) or {};
-    if targetTileProps.type == "ladder" then
-        player.vy = -0.07
-		player.state = "climbe"
-    else
-		player.vy = 0
-		player.state = "stand"
-	end	
-	
-	
-	
+        currentTile = TiledMap_GetMapTile(math.floor(player.x + 0.5), math.floor(player.y + 0.5), z)
+        targetTileProps = TiledMap_GetTileProps(targetTile) or {};
+        if targetTileProps.type == "ladder" then
+            player.vy = -0.07
+            player.state = "climbe"
+        else
+            --player.vy = 0
+            player.state = "stand"
+        end
 	end
 	
     if moveX ~= 0 then
@@ -114,19 +110,22 @@ function love.update(dt)
         player.vx = player.vx * 0.9
     end
 
-    -- gravity
-    player.vy = player.vy + gravity.y
     
     if math.abs(player.vx) < 0.001 then
         player.vx = 0
     end
 
+    -- gravity
+    if player.state ~= "climb" then
+        player.vy = player.vy + gravity.y
+    end
+    
     dirX = player.vx / math.abs(player.vx)
     dirY = player.vy / math.abs(player.vy)
     if math.abs(player.vx) > player.maxSpeed then
         player.vx = player.maxSpeed * dirX
     end
-    
+
     target = {
         x = player.x + player.vx,
         y = player.y + player.vy
