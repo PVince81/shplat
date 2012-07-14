@@ -163,8 +163,6 @@ function love.update(dt)
         end
     end
 
-    debug.update(debug_playerPos, player.x .. " " .. player.y)
-
     cam.x = player.x * FIELD_SIZE
     cam.y = player.y * FIELD_SIZE
 
