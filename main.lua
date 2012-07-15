@@ -31,6 +31,7 @@ sprites = nil
 
 
 musicDelay = 4
+musicPaused = false
 
 function love.conf(t)
     t.screen.width = 640
@@ -433,15 +434,24 @@ function love.keypressed(key, unicode)
 	end
 	debug.update(debug_keypressed, key)
     if key == "escape" then
-        love.quit()
+        love.event.push("quit")
     elseif key == "p" then
         paused = not paused
         if musicChannel ~= nil then
             if paused then
                 musicChannel:pause()
             else
-                musicChannel:resume()
+                if not musicPaused then
+                    musicChannel:resume()
+                end
             end
+        end
+    elseif key == "m" then
+        musicPaused = not musicPaused
+        if musicPaused then
+            musicChannel:pause()
+        else
+            musicChannel:resume()
         end
     end
 
