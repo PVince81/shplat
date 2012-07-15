@@ -1,7 +1,8 @@
 function love.conf(t)
-    t.screen.width = 640
-    t.screen.height = 480
+    t.screen.width = 800
+    t.screen.height = 600
     t.screen.vsync = true
+    t.screen.fullscreen = false
     t.title = "Shplat"
     t.author = "Vincent Petry"
     --t.screen.fsaa = 1

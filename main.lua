@@ -6,6 +6,7 @@ require("entity")
 
 FIELD_SIZE = 25
 
+musicChannel = nil
 paused = false
 gravity = {
     x= 0,
@@ -28,6 +29,8 @@ entities = {}
 cam = {x=0, y=0}
 sprites = nil
 
+
+musicDelay = 4
 
 function love.conf(t)
     t.screen.width = 640
@@ -61,7 +64,8 @@ function love.load()
 
     loadSprites()
     loadSounds()
-
+    loadMusic()
+    
 	debug_player_x = debug.add("Player.x")
 	debug_player_y = debug.add("Player.y")
 	debug_player_vx = debug.add("Player.vx")
@@ -71,6 +75,9 @@ function love.load()
 	debug_keypressed = debug.add("keypressed")
 	debug_sometext = debug.add("debugsometext")
     debug_keys = debug.add("keys")
+    musicChannel = playMusic(musics.main)
+    musicChannel:setVolume(0.0)
+    
     start()
 end
 
@@ -275,6 +282,14 @@ function love.update(dt)
         return
     end
 
+    if musicDelay > 0 then
+        musicDelay = musicDelay - dt
+        -- HACK
+        musicChannel:setVolume(1 - musicDelay / 4)
+        if musicDelay <= 0 then
+        end
+    end
+
     if game.state.name == "restart" then
         start()
     elseif game.state.name == "nextlevel" then
@@ -317,6 +332,7 @@ function love.update(dt)
             TiledMap_SetMapTile(x, y, z, 0)
             game.keys = game.keys - 1
             if game.keys <= 0 then
+                playSound(sounds.doorOpen)
                 openExitDoors()
             end
         end
@@ -340,6 +356,7 @@ function love.update(dt)
                 --player.vy = 0
         --       player.state = "stand"
             elseif currentTileType == "exit" then
+                playSound(sounds.exit)
                 player.state:setState("exit", 1.5, "hidden")
                 game.state:setState("exit", 1.5, "nextlevel")
             end
@@ -415,8 +432,17 @@ function love.keypressed(key, unicode)
 		debug.toggle()
 	end
 	debug.update(debug_keypressed, key)
-    if key == "p" then
+    if key == "escape" then
+        love.quit()
+    elseif key == "p" then
         paused = not paused
+        if musicChannel ~= nil then
+            if paused then
+                musicChannel:pause()
+            else
+                musicChannel:resume()
+            end
+        end
     end
 
 end

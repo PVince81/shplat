@@ -45,7 +45,7 @@ function loadLevel(num)
             elseif tileProps and tileProps.name == "monster" then
                 local monster = Entity.create("monster")
                 monster.x = x + 0.5
-                monster.y = y
+                monster.y = y - 0.01
                 monster.vx = 0
                 monster.vy = 0
                 monster.dy = 0
