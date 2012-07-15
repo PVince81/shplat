@@ -1,4 +1,5 @@
 require("model")
+require("sound")
 require("donut")
 require("state")
 require("entity")
@@ -59,6 +60,7 @@ function love.load()
 
 
     loadSprites()
+    loadSounds()
 
 	debug_player_x = debug.add("Player.x")
 	debug_player_y = debug.add("Player.y")
@@ -220,6 +222,11 @@ function updateEntity(entity, dt)
 --             else
 --                 target.y = math.floor(mapY) + 1.5
 --             end
+            if math.abs(entity.vy) > 0 and math.abs(entity.y - entity.lastY) > 0.05 then
+                -- was falling
+                playSound(sounds.floor)
+            end
+            
             entity.vy = 0
             if entity.state.name == "jump" and dirY > 0 then
                 entity.state:setState("stand")
@@ -227,6 +234,8 @@ function updateEntity(entity, dt)
         end
     end
 
+    entity.lastX = entity.x
+    entity.lastY = entity.y
     entity.x = target.x
     entity.y = target.y
 end
@@ -240,6 +249,7 @@ function updatePlayer(player, dt)
             if entity.type == "monster" then
                 local bb2 = getBoundingBox(entity)
                 if checkRectCollision(bb, bb2) then
+                    playSound(sounds.dead)
                     player.state:setState("dead", 2, "stand")
                     game.state:setState("dead", 2, "restart")
                     break
@@ -303,6 +313,7 @@ function love.update(dt)
         debug.update(debug_sometext, x .. "," .. y .. " " .. currentTileType .. " (" .. currentTile .. ")")
 
         if currentTileType == "key" then
+            playSound(sounds.collect)
             TiledMap_SetMapTile(x, y, z, 0)
             game.keys = game.keys - 1
             if game.keys <= 0 then
@@ -337,6 +348,7 @@ function love.update(dt)
         if player.state.name == "stand" and
                 (love.keyboard.isDown(" ") or love.keyboard.isDown("lctrl") or love.keyboard.isDown("rctrl")) then
             player.state:setState("jump")
+            playSound(sounds.jump)
             moveY = -1
             player.vy = -0.15
         end

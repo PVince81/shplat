@@ -9,6 +9,8 @@ function Entity.create(type)
 
     entity.x = 0
     entity.y = 0
+    entity.lastX = 0
+    entity.lastY = 0
     entity.vx = 0
     entity.vy = 0
     entity.dx = 1
