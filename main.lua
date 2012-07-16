@@ -354,7 +354,7 @@ function love.update(dt)
             end
         end
 
-        if player.state.name == "stand" and
+        if player.state.name == "stand" and math.abs(player.vy) < 0.001 and
                 (love.keyboard.isDown(" ") or love.keyboard.isDown("lctrl") or love.keyboard.isDown("rctrl")) then
             player.state:setState("jump")
             playSound(sounds.jump)
