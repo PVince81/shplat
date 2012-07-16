@@ -8,6 +8,24 @@ Requirements
 
 - LÖVE 0.8.0: https://love2d.org/
 
+Running the game
+================
+
+Linux
+-----
+
+Install LÖVE: https://love2d.org
+Run:
+    love GAMEPATH
+where GAMEPATH is the path to the game
+
+Windows/Mac
+-----------
+
+Install LÖVE: https://love2d.org
+Open the game's directory with LÖVE
+
+
 Authors
 =======
 

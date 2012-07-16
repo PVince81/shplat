@@ -33,15 +33,6 @@ sprites = nil
 musicDelay = 4
 musicPaused = false
 
-function love.conf(t)
-    t.screen.width = 640
-    t.screen.height = 480
-    t.screen.vsync = true
-    t.title = "Shplat"
-    t.author = "Vincent Petry"
-    --t.screen.fsaa = 1
-end
-
 function loadSprites()
     sprites = {}
     spritesImage = love.graphics.newImage("entities.png")
@@ -61,7 +52,7 @@ function love.load()
     --random = debug.add("Random")
 
     debug_currentTile = debug.add("Current tile")
-
+    love.mouse.setVisible(false)
 
     loadSprites()
     loadSounds()
